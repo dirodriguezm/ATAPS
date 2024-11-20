@@ -28,7 +28,8 @@ jobs:
         name: Call Dagger Publish Helm Charts Function
         uses: dagger/dagger-for-github@v5
         env:  
-          GH_TOKEN: ${{ secrets.TAP_TOKEN }} 
+          GH_TOKEN: ${{ secrets.TAP_TOKEN }}
+          
         with:
           version: "latest"
           verb: call

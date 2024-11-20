@@ -3,6 +3,12 @@ name: Deploy Staging
 on:
   release:
     types: [prereleased]
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   deploy-staging:
@@ -22,8 +28,10 @@ jobs:
       -
         name: Call Dagger Deploy Function
         uses: dagger/dagger-for-github@v5
+        env:
+          GH_TOKEN: ${{secrets.TAP_TOKEN}} 
         with:
           version: "latest"
           verb: call
-          args: deploy-helm-charts --username=${{github.actor}} --password=${{secrets.GITHUB_TOKEN}} --helm-values=ssm:tapservice-values-staging --version=24.9.0
+          args: deploy-helm-charts --username=alercebroker --password=env:GH_TOKEN --helm-values=ssm:tapservice-values-staging --version=24.9.0 --dry-run=true
           workdir: ./ci

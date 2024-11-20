@@ -14,6 +14,9 @@ func (m *Tapservicego) PublishHelmChart(
 	chartDir *dagger.Directory,
 	username string,
 	password *dagger.Secret,
+	awsAccessKeyID *dagger.Secret,
+	awsSecretAccessKey *dagger.Secret,
+	awsSessionToken *dagger.Secret,
 	ghOrg *string,
 ) (string, error) {
 	container := dag.Container().
@@ -36,6 +39,7 @@ func (m *Tapservicego) PublishHelmChart(
 	}
 	registry := fmt.Sprintf("oci://ghcr.io/%s/tapservice-chart", *ghOrg)
 	return container.
+		With(withAWSCredentials(awsAccessKeyID, awsSecretAccessKey, awsSessionToken, ctx)).
 		WithExec([]string{"helm", "registry", "login", "-u", username, "-p", pwd, "ghcr.io"}).
 		WithExec([]string{"helm", "push", fmt.Sprintf("/usr/src/tapservice-%s.tgz", version), registry}).
 		Stdout(ctx)
@@ -46,6 +50,9 @@ func (m *Tapservicego) Deploy(
 	ctx context.Context,
 	username string,
 	password *dagger.Secret,
+	awsAccessKeyID *dagger.Secret,
+	awsSecretAccessKey *dagger.Secret,
+	awsSessionToken *dagger.Secret,
 	chartUrl string,
 	helmValues *string,
 	dryRun bool,
@@ -62,7 +69,7 @@ func (m *Tapservicego) Deploy(
 	m.DryRun = dryRun
 	return dag.Container().
 		From("alpine/k8s:1.31.0").
-		With(withAWSCredentials).
+		With(withAWSCredentials(awsAccessKeyID, awsSecretAccessKey, awsSessionToken, ctx)).
 		With(m.helmValuesFile).
 		WithWorkdir("/usr/src/app").
 		WithExec([]string{"helm", "registry", "login", "-u", username, "-p", pwd, "ghcr.io"}).
