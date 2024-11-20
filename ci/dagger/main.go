@@ -38,10 +38,13 @@ func (m *Ci) PublishHelmCharts(
 	rootDir *Directory,
 	username string,
 	password *Secret,
+	awsAccessKeyID *Secret,
+	awsSecretAccessKey *Secret,
+	awsSessionToken *Secret,
 	ghOrg *string,
 ) (string, error) {
 	var result string
-	output, err := m.publishTapserviceHelmChart(ctx, rootDir, username, password, ghOrg)
+	output, err := m.publishTapserviceHelmChart(ctx, rootDir, username, password, awsAccessKeyID, awsSecretAccessKey, awsSessionToken, ghOrg)
 	if err != nil {
 		return "", err
 	}
@@ -54,12 +57,15 @@ func (m *Ci) DeployHelmCharts(
 	ctx context.Context,
 	username string,
 	password *Secret,
+	awsAccessKeyID *Secret,
+	awsSecretAccessKey *Secret,
+	awsSessionToken *Secret,
 	helmValues *string,
 	version string,
 	dryRun bool,
 ) (string, error) {
 	var result string
-	container := m.deployTapService(username, password, helmValues, version, dryRun)
+	container := m.deployTapService(username, password, awsAccessKeyID, awsSecretAccessKey, awsSessionToken, helmValues, version, dryRun)
 	output, err := container.Stdout(ctx)
 	if err != nil {
 		return "", err
@@ -68,20 +74,13 @@ func (m *Ci) DeployHelmCharts(
 	return result, nil
 }
 
-func (m *Ci) deployTapService(username string, password *Secret, helmValues *string, version string, dryRun bool) *Container {
+func (m *Ci) deployTapService(username string, password *Secret, awsAccessKeyID *Secret, awsSecretAccessKey *Secret, awsSessionToken *Secret, helmValues *string, version string, dryRun bool) *Container {
 	opts := TapservicegoDeployOpts{
 		HelmValues: *helmValues,
 	}
-	fmt.Print("####################")
-	fmt.Print(username)
-	fmt.Print(helmValues)
-	fmt.Print(version)
-	fmt.Print(dryRun)
-	fmt.Print("####################")
-
 	url := "ghcr.io/%s/tapservice-chart/tapservice:%s"
 	url = fmt.Sprintf(url, username, version)
-	return dag.Tapservicego().Deploy(username, password, url, dryRun, opts)
+	return dag.Tapservicego().Deploy(username, password, awsAccessKeyID, awsSecretAccessKey, awsSessionToken, url, dryRun, opts)
 
 }
 
@@ -113,6 +112,9 @@ func (m *Ci) publishTapserviceHelmChart(
 	rootDir *Directory,
 	username string,
 	password *Secret,
+	awsAccessKeyID *Secret,
+	awsSecretAccessKey *Secret,
+	awsSessionToken *Secret,
 	ghOrg *string,
 ) (string, error) {
 	chartDir := rootDir.Directory("tapservicego").Directory("deployments/tapservice")
@@ -123,5 +125,5 @@ func (m *Ci) publishTapserviceHelmChart(
 	opts := TapservicegoPublishHelmChartOpts{
 		GhOrg: org,
 	}
-	return dag.Tapservicego().PublishHelmChart(ctx, chartDir, username, password, opts)
+	return dag.Tapservicego().PublishHelmChart(ctx, chartDir, username, password, awsAccessKeyID, awsSecretAccessKey, awsSessionToken, opts)
 }

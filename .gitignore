@@ -27,4 +27,7 @@ ataps
 values-override.yaml
 
 # Local environment variables file
-.env
+*.env
+
+# Others
+dagger.json
